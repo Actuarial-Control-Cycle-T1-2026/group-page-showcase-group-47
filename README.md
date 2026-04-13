@@ -4,7 +4,7 @@
 **Students:** Aadi Arora & Nicholas Choi  
 **Professor:** Xiao Xu
 
-Our finalised report can be found here: [Group 47 Report](Group_47_Report.pdf)
+Our finalised report can be found here: [Group 47 Report](<./Group 47 Report.pdf>)
 
 The following sections explain our methodology in more detail, directing you to the relevant code, data, and outputs for each part of the analysis.
 
@@ -28,7 +28,7 @@ The following sections explain our methodology in more detail, directing you to 
 
 ## 1. Data Cleaning and Analysis
 
-The full R code for all cleaning and analysis can be found here: [`4001_Group_Assignment_FINAL.R`](4001_Group_Assignment_FINAL.R)
+The full R code for all cleaning and analysis can be found here: [`4001_Group_Assignment_FINAL.R`](<./4001 Group Assignment FINAL.R>)
 
 A high-level EDA summary was exported to: [`eda_overview.xlsx`](eda_overview.xlsx)
 
