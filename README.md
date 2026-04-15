@@ -200,3 +200,173 @@ The business interruption product covers loss of gross revenue and necessary ext
 **Key exclusions:** Non-damage market losses (commodity price movements, trade sanctions, demand-side factors); regulatory or government-ordered shutdowns unless caused by covered equipment; interruptions from unresolved pre-existing infrastructure defects; losses during the waiting period or exceeding the per-system annual aggregate limit.
 
 Product terms are adapted by solar system, the Helionis Cluster receives a shorter 72-hour waiting period reflecting its stronger redundancy, Bayesian System uses standard 120-hour terms, and Oryn Delta is subject to an extended 168-hour waiting period and tighter sublimits given its operational fragility and lower resilience infrastructure.
+
+
+## 3. Pricing & Capital Modelling
+
+### 3.1 Aggregate Loss Modelling
+
+The modelling framework follows a the standard actuarial decomposition of losses into **frequency and severity components**, which are then recombined post model selection in the simulation stage.
+
+- Claim **frequency** is modelled using Poisson & Negative Binomials GLMs, reflecting count-based processes and allowing covariates such as exposure, environment, and operational factors.
+- Claim **severity** is modelled using Lognormal, Gamma and Weibull distributions to capture the strong right-skew and heavy-tailed nature of losses (particularly evident in cargo and business interruption).
+- These components are assumed **conditionally independent**, allowing tractable estimation and simulation.
+
+We explicitly construct these models manually in R (rather than relying on black-box wrappers) to:
+- Maintain **full transparency** over parameter estimation  
+- Allow **custom feature engineering and transformations**  
+- Ensure **alignment with actuarial assumptions** (e.g. log-link functions, exposure offsets)
+
+Model selection is then performed for both frequency and severity models using Akaike's Information Criteria (AIC)
+
+---
+
+### 3.2 Monte Carlo Simulation of Aggregate Losses
+
+Aggregate losses are generated via Monte Carlo simulation:
+
+1. Simulate claim counts from fitted frequency models  
+2. Simulate claim severities from fitted severity distributions  
+3. Aggregate losses across all simulated claims  
+4. Several iterations are performed to obtain empirical distributions  
+
+This framework enables the generation of full loss distributions, upon which the following analysis can be conducted:
+
+- Expected loss estimation  
+- Variance and volatility analysis  
+- Tail risk measurement (VaR, TVaR)  
+
+---
+
+### 3.3 Pricing Framework
+
+Pricing is derived directly from simulated loss outputs.
+
+#### Technical Premium
+
+The **technical premium** is defined as:
+
+Technical Premium = Expected Loss + Risk Margin
+
+In this expression, expected loss is the mean of the simulated aggregate losses from the Monte Carlo simulations, whilst risk margin is dervied using TVaR to capture tail risk. 
+
+#### Gross Premium
+
+Post the calculation of the Technical Premium, final gross premiums are calculated by incorporating additional fixed loadings:
+- 12% expense loading
+- 8% profit margin
+- 10% capital charge
+
+These loadings are used in conjunction with the Technical Premium to calculate Gross Premium as:
+
+Gross Premium = Technical Premium x (1 + Expense + Profit + Capital)
+
+This ensures:
+- Pricing adequacy under expected conditions  
+- Protection against tail events  
+- Commercial viability  
+
+---
+### 3.4 Short-Term Economic Outputs (1-Year)
+
+Short-term outputs are derived directly from simulation results using Monte Carlo Simulations with a forward-looking time horizon of 1 year. 
+
+For each line of business, we compute:
+- Mean cost  
+- Variance  
+- Percentiles (P5, P50, P95, P99)  
+- TVaR  
+
+These metrics provide a **distributional view of profitability**, rather than relying on averages.
+
+Key observations:
+
+- All lines produce **positive expected net revenue**
+- **Cargo dominates absolute profitability** due to scale  
+- **Business interruption drives volatility and tail risk**  
+- Equipment and workers’ compensation provide **stable earnings base**
+
+---
+
+### 3.5 Long-Term Economic Modelling (10-Year PV)
+
+Long-term projections extend the framework using:
+
+- Discounted cash flows over a 10-year horizon  
+- Constant inflation and premium growth assumptions  
+- A discount rate of **3.76%**
+
+Outputs are expressed as **present value distributions**, maintaining consistency with the short-term simulation approach.
+
+Key observations:
+
+- All lines remain **profitable in PV terms**  
+- Variability increases due to **compounding uncertainty**  
+- Cargo continues to dominate long-term outcomes  
+- Tail risk persists and accumulates over time  
+
+---
+
+## 4. Stress Testing & Scenario Analysis
+
+### 4.1 Scenario Framework
+
+To address the limitations of independent modelling assumptions, we implement **scenario-based stress testing**.
+
+To assess the portfolio under various scenarios, **systematic shocks** were introduced to:
+- Claim frequency  
+- Claim severity  
+
+Across all lines simultaneously. This enables an approximation of:
+
+- Correlated events  
+- System-wide disruptions  
+- Extreme but plausible outcomes  
+
+Which may not be well-represented in the base models. 
+
+---
+
+### 4.2 Scenario Design
+
+Three scenarios are considered:
+
+- **Best Case** – stable operations, minimal disruption  
+- **Base Case** – expected conditions from fitted models  
+- **Worst Case** – correlated extreme event (e.g. solar storm)
+
+Shocks are calibrated to approximate a **1-in-100-year event** for the worst-case scenario, consistent with actuarial capital standards.
+
+---
+
+### 4.3 Scenario Results
+
+As shown in Table 5 (page 9) of the report:
+
+- Base case expected cost: ~$32.1 trillion  
+- Worst case expected cost: ~$57 trillion (**~78%** increase)
+- Best case expected cost: ~28.7 trillion (**~%11** decrease)
+
+The sceario results indicate that, across the portfolio:
+
+- Downside risk is **highly asymmetric**  
+- Extreme events produce **disproportionate increases in losses**  
+- Portfolio risk is driven by **correlation and cargo concentration**
+
+---
+
+### 4.4 Capital Implications
+
+Based on the results of the scenario analysis, it is clear that to effectively manage the portfolio:
+
+- Mean-based pricing is insufficient  
+- VaR alone understates extreme risk  
+- **TVaR and stress scenarios must drive capital decisions**
+
+This directly informs:
+- Capital buffers  
+- Reinsurance strategies  
+- Portfolio risk limits  
+
+---
+
