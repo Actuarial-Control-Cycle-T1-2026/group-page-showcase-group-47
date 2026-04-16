@@ -23,6 +23,16 @@ The following sections explain our methodology in more detail, directing you to 
    - [Cargo Loss](#cargo-loss)
    - [Workers' Compensation](#workers-compensation)
    - [Business Interruption](#business-interruption)
+3. [Pricing & Capital Modelling](#3-pricing-&-capital-modelling)
+   - [Aggregate Loss Modelling](#aggregate-loss-modelling)
+   - [Monte Carlo Simulation of Aggregate Losses](#monte-carlo-simulation-of-aggregate-losses)
+   - [Pricing Framework](#pricing-framework)
+   - [Short-Term Economic Outputs (1-Year)](#Short-Term-Economic-Outputs-(1-Year))
+   - [Long-Term Economic Modelling (10-Year PV)](#Long-Term-Economic-Modelling-(10-Year-PV))
+4. [Stress Testing & Scenario Analysis](#4-stress-testing-&-scnario-analysis)
+   - [Scenario Framework](#scenario-framework)
+   - [Scenario Design](#scenario-design)
+   - [Scenario Results](#scenario-results)
 
 ---
 
@@ -212,6 +222,72 @@ The modelling framework follows a the standard actuarial decomposition of losses
 - Claim **severity** is modelled using Lognormal, Gamma and Weibull distributions to capture the strong right-skew and heavy-tailed nature of losses (particularly evident in cargo and business interruption).
 - These components are assumed **conditionally independent**, allowing tractable estimation and simulation.
 
+Claim frequency is modelled for each line of business using the following helper functions:
+
+```r
+fit_count_models <- function(df, formula_main) {
+  poisson_fit <- glm(formula_main, family = poisson(), data = df)
+  nb_fit <- MASS::glm.nb(formula_main, data = df)
+  list(poisson = poisson_fit, nb = nb_fit)
+}
+
+choose_count_model <- function(model_list) {
+  aic_tbl <- tibble(
+    model = c("poisson", "nb"),
+    aic = c(AIC(model_list$poisson), AIC(model_list$nb))
+  )
+  best_name <- aic_tbl$model[which.min(aic_tbl$aic)]
+  list(best_name = best_name, best_model = model_list[[best_name]], aic = aic_tbl)
+}
+```
+Claim Severity is modelled for each line of business using the following helper functions:
+```r
+fit_sev_candidates <- function(x) {
+  x <- x[is.finite(x) & !is.na(x) & x > 0]
+  x_fit <- x[x <= quantile(x, 0.995, na.rm = TRUE)]
+
+  fit_lnorm <- tryCatch(
+    fitdist(x_fit, "lnorm"),
+    error = function(e) NULL
+  )
+
+  fit_gamma <- tryCatch(
+    fitdist(
+      x_fit,
+      "gamma",
+      start = list(
+        shape = (mean(x_fit)^2) / var(x_fit),
+        rate  = mean(x_fit) / var(x_fit)
+      )
+    ),
+    error = function(e) NULL
+  )
+
+  fit_weibull <- tryCatch(
+    fitdist(x_fit, "weibull"),
+    error = function(e) NULL
+  )
+
+  fits <- list(
+    lnorm = fit_lnorm,
+    gamma = fit_gamma,
+    weibull = fit_weibull
+  )
+
+  fits <- fits[!sapply(fits, is.null)]
+  return(fits)
+}
+
+choose_sev_model <- function(fits) {
+  aic_tbl <- tibble(
+    model = names(fits),
+    aic = sapply(fits, AIC)
+  )
+  best_name <- aic_tbl$model[which.min(aic_tbl$aic)]
+  list(best_name = best_name, best_fit = fits[[best_name]], aic = aic_tbl)
+}
+```
+
 We explicitly construct these models manually in R (rather than relying on black-box wrappers) to:
 - Maintain **full transparency** over parameter estimation  
 - Allow **custom feature engineering and transformations**  
@@ -229,6 +305,80 @@ Aggregate losses are generated via Monte Carlo simulation:
 2. Simulate claim severities from fitted severity distributions  
 3. Aggregate losses across all simulated claims  
 4. Several iterations are performed to obtain empirical distributions  
+
+The standard simulation engine is:
+```r
+simulate_lob_losses <- function(exposure_df, count_col, unit_col, sev_fit, sev_factor_col,
+                                sims = 10000, inflation = mean_infl, dependency_mult = 1) {
+  
+  n_rows <- nrow(exposure_df)
+  
+  lambda_vec <- exposure_df[[count_col]] * exposure_df[[unit_col]] * dependency_mult
+  sev_factor_vec <- exposure_df[[sev_factor_col]]
+  
+  out <- numeric(sims)
+  
+  for (i in seq_len(sims)) {
+    claim_counts <- rpois(n_rows, lambda = lambda_vec)
+    
+    total_loss <- 0
+    
+    for (j in which(claim_counts > 0)) {
+      n_claims <- claim_counts[j]
+      sev <- simulate_severity(n_claims, sev_fit, inflation = inflation)
+      total_loss <- total_loss + sum(sev) * sev_factor_vec[j]
+    }
+    
+    out[i] <- total_loss
+  }
+  
+  out
+}
+```
+For Cargo, a hybrid version was used because shipment volumes were so large that simulating every single claim in the upper count range became computationally expensive. The hybrid engine uses a normal approximation when claim counts exceed a chosen threshold:
+
+```r
+simulate_lob_losses_hybrid <- function(exposure_df, count_col, unit_col, sev_fit, sev_factor_col,
+                                       sims = 1000, inflation = mean_infl, dependency_mult = 1,
+                                       count_threshold = 200) {
+  
+  lambda_vec <- exposure_df[[count_col]] * exposure_df[[unit_col]] * dependency_mult
+  sev_factor_vec <- exposure_df[[sev_factor_col]]
+  sev_sampler <- make_sev_sampler(sev_fit, inflation = inflation)
+  sev_mom <- make_sev_moments(sev_fit, inflation = inflation)
+  
+  out <- numeric(sims)
+  
+  for (i in seq_len(sims)) {
+    counts <- rpois(length(lambda_vec), lambda_vec)
+    total_loss <- 0
+    
+    idx <- which(counts > 0)
+    if (length(idx) == 0) {
+      out[i] <- 0
+      next
+    }
+    
+    for (j in idx) {
+      n <- counts[j]
+      sf <- sev_factor_vec[j]
+      
+      if (n <= count_threshold) {
+        total_loss <- total_loss + sum(sev_sampler(n)) * sf
+      } else {
+        agg_mean <- n * sev_mom$mean
+        agg_sd <- sqrt(n * sev_mom$var)
+        approx_loss <- rnorm(1, mean = agg_mean, sd = agg_sd)
+        total_loss <- total_loss + max(approx_loss, 0) * sf
+      }
+    }
+    
+    out[i] <- total_loss
+  }
+  
+  out
+}
+```
 
 This framework enables the generation of full loss distributions, upon which the following analysis can be conducted:
 
