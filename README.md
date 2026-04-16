@@ -370,3 +370,34 @@ This directly informs:
 
 ---
 
+## 5. Key Files and Outputs
+
+The main code used for this project is available here: [`4001 Group Assignment FINAL.R`](<./4001 Group Assignment FINAL.R>)
+
+The main report is available here: [`Group 47 Report`](<./Group 47 Report.pdf>)
+
+Other useful outputs include:
+- [`eda_overview.xlsx`](eda_overview.xlsx) — summary tables for the exploratory data analysis.
+- [`casestudyoutputs.xlsx`](outputs/tables/case_study_outputs.xlsx) — final tables produced from the modelling and pricing analysis.
+- [`lob_and_portfolio_distributions.png`](outputs/plots/lob_and_portfolio_distributions.png) — simulated loss distributions for each line of business and the overall portfolio.
+- [`report_insights.rds`](outputs/tables/report_insights.rds) — stored headline findings from the case study.
+
+## 6. Key Findings
+
+The modelling results show that all four lines of business can be written, but they require different levels of control and pricing discipline. Business interruption is the most sensitive to correlated shocks and should be written with the tightest wording, strongest sublimits, and careful dependence assumptions.
+
+Oryn Delta emerges as the most challenging solar system to price because its lower redundancy, higher route hazard, and more difficult operating conditions increase both frequency and tail severity. Helionis Cluster is comparatively more stable, while Bayesian System acts as the pricing anchor for the new portfolio.
+
+The most important lesson from the analysis is that mean loss alone is not enough for this portfolio. Tail measures such as VaR and TVaR, together with scenario testing, are essential for setting capital, reinsurance, and premium adequacy.
+
+## 7. Limitations and Assumptions
+
+Several assumptions were required because the prospective Cosmic Quarry portfolio does not perfectly match the historical claims data. New solar system exposures were therefore constructed using proxies from the inventory and personnel files, and these proxies introduce modelling uncertainty.
+
+In particular, the business interruption and cargo exposure bases are more assumption-driven than the equipment and workers' compensation exposures. The historical-to-new solar system bridge also requires explicit relativity factors because the historical labels do not align exactly with the new business portfolio.
+
+## 8. Thank You
+
+Thank you for reading our project README and report.
+
+This project was completed for ACTL4001 as part of the Term 1 2026 group assignment.
