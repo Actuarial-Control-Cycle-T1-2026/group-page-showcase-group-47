@@ -23,16 +23,21 @@ The following sections explain our methodology in more detail, directing you to 
    - [Cargo Loss](#cargo-loss)
    - [Workers' Compensation](#workers-compensation)
    - [Business Interruption](#business-interruption)
-3. [Pricing & Capital Modelling](#3-pricing-&-capital-modelling)
+3. [Pricing and Capital Modelling](#3-pricing-and-capital-modelling)
    - [Aggregate Loss Modelling](#aggregate-loss-modelling)
    - [Monte Carlo Simulation of Aggregate Losses](#monte-carlo-simulation-of-aggregate-losses)
    - [Pricing Framework](#pricing-framework)
-   - [Short-Term Economic Outputs (1-Year)](#Short-Term-Economic-Outputs-(1-Year))
-   - [Long-Term Economic Modelling (10-Year PV)](#Long-Term-Economic-Modelling-(10-Year-PV))
-4. [Stress Testing & Scenario Analysis](#4-stress-testing-&-scnario-analysis)
+   - [Short-Term Economic Outputs (1-Year)](#short-term-economic-outputs)
+   - [Long-Term Economic Modelling (10-Year PV)](#long-term-economic-modelling)
+4. [Stress Testing and Scenario Analysis](#4-stress-testing-and-scenario-analysis)
    - [Scenario Framework](#scenario-framework)
    - [Scenario Design](#scenario-design)
    - [Scenario Results](#scenario-results)
+5. [Key Files and Outputs](#5-key-files-and-outputs)
+6. [Key Findings](#6-key-findings)
+7. [Limitations and Assumptions](#7-limitations-and-assumptions)
+
+   
 
 ---
 
@@ -212,9 +217,9 @@ The business interruption product covers loss of gross revenue and necessary ext
 Product terms are adapted by solar system, the Helionis Cluster receives a shorter 72-hour waiting period reflecting its stronger redundancy, Bayesian System uses standard 120-hour terms, and Oryn Delta is subject to an extended 168-hour waiting period and tighter sublimits given its operational fragility and lower resilience infrastructure.
 
 
-## 3. Pricing & Capital Modelling
+## 3. Pricing and Capital Modelling
 
-### 3.1 Aggregate Loss Modelling
+### Aggregate Loss Modelling
 
 The modelling framework follows a the standard actuarial decomposition of losses into **frequency and severity components**, which are then recombined post model selection in the simulation stage.
 
@@ -297,7 +302,7 @@ Model selection is then performed for both frequency and severity models using A
 
 ---
 
-### 3.2 Monte Carlo Simulation of Aggregate Losses
+### Monte Carlo Simulation of Aggregate Losses
 
 Aggregate losses are generated via Monte Carlo simulation:
 
@@ -388,7 +393,7 @@ This framework enables the generation of full loss distributions, upon which the
 
 ---
 
-### 3.3 Pricing Framework
+### Pricing Framework
 
 Pricing is derived directly from simulated loss outputs.
 
@@ -417,7 +422,7 @@ This ensures:
 - Commercial viability  
 
 ---
-### 3.4 Short-Term Economic Outputs (1-Year)
+### Short-Term Economic Outputs
 
 Short-term outputs are derived directly from simulation results using Monte Carlo Simulations with a forward-looking time horizon of 1 year. 
 
@@ -438,7 +443,7 @@ Key observations:
 
 ---
 
-### 3.5 Long-Term Economic Modelling (10-Year PV)
+### Long-Term Economic Modelling
 
 Long-term projections extend the framework using:
 
@@ -457,9 +462,9 @@ Key observations:
 
 ---
 
-## 4. Stress Testing & Scenario Analysis
+## 4. Stress Testing and Scenario Analysis
 
-### 4.1 Scenario Framework
+### Scenario Framework
 
 To address the limitations of independent modelling assumptions, we implement **scenario-based stress testing**.
 
@@ -477,7 +482,7 @@ Which may not be well-represented in the base models.
 
 ---
 
-### 4.2 Scenario Design
+### Scenario Design
 
 Three scenarios are considered:
 
@@ -489,7 +494,7 @@ Shocks are calibrated to approximate a **1-in-100-year event** for the worst-cas
 
 ---
 
-### 4.3 Scenario Results
+### Scenario Results
 
 As shown in Table 5 (page 9) of the report:
 
@@ -505,7 +510,7 @@ The sceario results indicate that, across the portfolio:
 
 ---
 
-### 4.4 Capital Implications
+### Capital Implications
 
 Based on the results of the scenario analysis, it is clear that to effectively manage the portfolio:
 
